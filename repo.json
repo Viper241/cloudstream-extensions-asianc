@@ -1,0 +1,9 @@
+{
+  "name": "AsianC Repo",
+  "iconUrl": "https://asianc.id/template/images/icon_192x192.png",
+  "description": "AsianC (Dramacool) extension for CloudStream",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/Viper241/cloudstream-extensions-asianc/builds/plugins.json"
+  ]
+}
