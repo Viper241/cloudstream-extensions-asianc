@@ -44,6 +44,23 @@ class AsianCLiveTest {
     }
 
     @Test
+    fun allGreensMovie() = runBlocking {
+        if (extractorApis.none { it is HgLink }) extractorApis.add(HgLink())
+        if (extractorApis.none { it is Minochinos }) extractorApis.add(Minochinos())
+
+        val url = "https://asianc.id/all-greens-2026-episode-1.html"
+        val loaded = api.load(url)
+        println("ALLGREENS load=${loaded?.name} type=${loaded?.type} class=${loaded?.javaClass?.simpleName}")
+        println("ALLGREENS data=${(loaded as? com.lagradost.cloudstream3.MovieLoadResponse)?.dataUrl}")
+
+        val links = mutableListOf<com.lagradost.cloudstream3.utils.ExtractorLink>()
+        val ok = api.loadLinks(url, false, {}) { links.add(it) }
+        println("ALLGREENS links ok=$ok count=${links.size}")
+        links.forEach { println("  ${it.source} | ${it.name} | ${it.type} | ${it.url}") }
+        require(ok && links.isNotEmpty()) { "no links for All Greens" }
+    }
+
+    @Test
     fun loadsSeries() = runBlocking {
         val response = api.load("https://asianc.id/drama-detail/squid-game-season-3")
             ?: error("load returned null")

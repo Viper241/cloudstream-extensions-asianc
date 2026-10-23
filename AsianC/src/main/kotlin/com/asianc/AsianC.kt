@@ -52,6 +52,7 @@ class AsianC : MainAPI() {
     private val episodeRegex = Regex("""(?i)\b(?:episode|ep)\s*(\d+)""")
     private val episodeHrefRegex = Regex("""-episode-(\d+)""")
     private val yearRegex = Regex("""\((\d{4})\)""")
+    private val dateRegex = Regex("""^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$""")
     private val onclickRegex = Regex("""window\.location\s*=\s*['"]([^'"]+)['"]""")
 
     override suspend fun getMainPage(
@@ -154,7 +155,24 @@ class AsianC : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        var document = app.get(url).document
+
+        // Movie episode pages contain only the watch block and episode list
+        // (no "details" metadata block). Follow their category link to the
+        // movie's detail page so the user gets a proper detail screen instead
+        // of an "Error loading" page.
+        if (document.selectFirst("div.details") == null) {
+            val detailHref = document.selectFirst("div.info-drama div.category a")
+                ?.attr("href")
+                ?.takeIf { it.isNotBlank() }
+            if (detailHref != null) {
+                val detailUrl = fixUrl(detailHref)
+                if (detailUrl != url) {
+                    document = app.get(detailUrl).document
+                }
+            }
+        }
+
         val details = document.selectFirst("div.details") ?: return null
         val info = details.selectFirst("div.info") ?: details
 
@@ -346,7 +364,7 @@ class AsianC : MainAPI() {
                 this.episode = episodeNumber
                 this.season = 1
                 this.posterUrl = fixUrlNull(poster)
-                if (!date.isNullOrBlank() && !date.equals("Invalid time", ignoreCase = true)) {
+                if (date != null && dateRegex.matches(date)) {
                     addDate(date, "yyyy-MM-dd HH:mm:ss")
                 }
             }
